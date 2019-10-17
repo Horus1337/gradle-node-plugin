@@ -1,7 +1,11 @@
 package com.moowork.gradle.node.npm
 
+import com.moowork.gradle.node.NodePlugin
 import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecResult
 
@@ -18,24 +22,9 @@ class NpmTask
 
     NpmTask()
     {
+        this.group = NodePlugin.NODE_GROUP
         this.runner = new NpmExecRunner( this.project )
         dependsOn( NpmSetupTask.NAME )
-
-        this.project.afterEvaluate {
-            afterEvaluate( this.project.node.nodeModulesDir )
-        }
-    }
-
-    void afterEvaluate(nodeModulesDir) {
-        if ( !this.runner.workingDir )
-        {
-            setWorkingDir( nodeModulesDir )
-        }
-
-        if ( !this.runner.workingDir.exists() )
-        {
-            this.runner.workingDir.mkdirs();
-        }
     }
 
     void setArgs( final Iterable<?> value )
@@ -43,15 +32,28 @@ class NpmTask
         this.args = value.asList()
     }
 
+    @Input
+    @Optional
+    String[] getNpmCommand() {
+        return npmCommand
+    }
+
     void setNpmCommand( String[] cmd )
     {
         this.npmCommand = cmd
     }
 
-    @Internal
+    @Input
+    @Optional
     List<?> getArgs()
     {
         return this.args
+    }
+
+    @Nested
+    NpmExecRunner getExecRunner()
+    {
+        return this.runner
     }
 
     void setEnvironment( final Map<String, ?> value )
@@ -59,9 +61,9 @@ class NpmTask
         this.runner.environment << value
     }
 
-    void setWorkingDir( final Object value )
+    void setWorkingDir( final File workingDir )
     {
-        this.runner.workingDir = value
+        this.runner.workingDir = workingDir
     }
 
     void setIgnoreExitValue( final boolean value )

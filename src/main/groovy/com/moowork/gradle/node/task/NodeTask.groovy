@@ -1,10 +1,17 @@
 package com.moowork.gradle.node.task
 
+import com.moowork.gradle.node.NodePlugin
 import com.moowork.gradle.node.exec.NodeExecRunner
 import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecResult
+
+import static org.gradle.api.tasks.PathSensitivity.RELATIVE
 
 class NodeTask
     extends DefaultTask
@@ -21,6 +28,7 @@ class NodeTask
 
     NodeTask()
     {
+        this.group = NodePlugin.NODE_GROUP
         this.runner = new NodeExecRunner( this.project )
         dependsOn( SetupTask.NAME )
     }
@@ -50,9 +58,9 @@ class NodeTask
         this.runner.environment << value
     }
 
-    void setWorkingDir( final Object value )
+    void setWorkingDir( final File workingDir )
     {
-        this.runner.workingDir = value
+        this.runner.workingDir = workingDir
     }
 
     void setIgnoreExitValue( final boolean value )
@@ -71,16 +79,35 @@ class NodeTask
         return this.result
     }
 
-    @Internal
+    @InputFile
+    @PathSensitive(RELATIVE)
+    File getScript()
+    {
+        if (this.script && this.script.isDirectory())
+        {
+            logger.warn("Using the NodeTask with a script directory ({}) is deprecated. " +
+                    "It will no longer be supported in the next major version.", this.script)
+            return new File(this.script, "index.js")
+        }
+        return this.script
+    }
+
+    @Input
     List<?> getArgs()
     {
         return this.args
     }
 
-    @Internal
+    @Input
     Iterable<?> getOptions()
     {
         return this.options
+    }
+
+    @Nested
+    NodeExecRunner getRunner()
+    {
+        return this.runner
     }
 
     @TaskAction

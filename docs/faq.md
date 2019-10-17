@@ -23,6 +23,13 @@ task bundle(type: YarnTask) {
 
 More info in [Gradle doc](https://docs.gradle.org/current/userguide/more_about_tasks.html#sec:up_to_date_checks)
 
+# How do I use npm ci instead of npm install?
+
+```gradle
+node {
+    npmInstallCommand = System.getenv("CI") ? 'ci' : 'install'
+}
+```
 
 # How do I set log level for NPM install task?
 
@@ -31,3 +38,17 @@ This can be done adding some arguments to the already defined `npmInstall`-task.
 ```gradle
 npmInstall.args = ['--loglevel', 'silly']
 ```
+
+# How do I specify a registry for the NPM setup task?
+
+This can be done by adding to the arguments for the already defined `npmSetup` task.
+
+```gradle
+tasks.npmSetup {
+    doFirst {
+        args = args + ['--registry', 'http://myregistry.npm.com']
+    }
+}
+```
+
+You can also add any other arguments to this list that work with `npm install` i.e. more verbose modes.

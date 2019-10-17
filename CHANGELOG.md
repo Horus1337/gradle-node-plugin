@@ -1,6 +1,36 @@
 Changelog
 =========
 
+Version 2.1.1 *(2019-09-28)*
+----------------------------
+
+* Fix an issue in `NodeTask`, `NpmTask`, `NpxTask` and `YarnTask` that caused the up-to-date checking to be too much sensitive regarding the environment: any change of an environment variable caused the task to be considered as out-of-date
+* Improve the inputs declarations of the `YarnTask`
+
+Version 2.1.0 *(2019-09-19)*
+----------------------------
+* Adds NpxTask for making use of https://www.npmjs.com/package/npx PR #32 
+* Improved up-to-date checks PR #32 
+* Support ARM even if the JDK reports aarch64 #33
+* Setting distBaseUrl to null disables repository adding PR #25 
+
+Version 2.0.0 *(2019-07-29)*
+----------------------------
+* Only support Gradle 5.x officially.
+* Drop support for grunt/gulp plugins.
+
+Version 1.5.1 *(2019-06-19)*
+----------------------------
+* Fix inputs/outputs for NpmInstallTask/YarnInstallTask. 
+
+Version 1.5.0 *(2019-06-19)*
+----------------------------
+* Backport from srs: Added gradle build cache support for npm install (bjornmagnusson)
+
+Version 1.4.0 *(2019-05-20)*
+----------------------------
+* Adds npmInstallCommand for overriding NpmInstallTasks behaviour.
+
 Version 1.3.0 *(2018-12-04)*
 ----------------------------
 * Relocated to com.github.node-gradle.(node|grunt|gulp)

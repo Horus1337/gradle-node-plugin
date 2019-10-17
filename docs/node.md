@@ -10,7 +10,7 @@ file (see [Installing](installing.md) for details):
 
 ```gradle
 plugins {
-  id "com.github.node-gradle.node" version "1.3.0"
+  id "com.github.node-gradle.node" version "2.0.0"
 }
 ```
 
@@ -66,7 +66,7 @@ task myScript(type: NodeTask) {
 }
 ```
 
-When executing this for the first time, it will run a nodeSetup task that downloads NodeJS 
+When executing this for the first time, it will run a `nodeSetup` task that downloads NodeJS 
 (for your platform) and NPM (Node Package Manager) if on windows (other platforms include 
 it into the distribution).
 
@@ -75,16 +75,18 @@ it into the distribution).
 
 When adding the node plugin, you will have a `npmInstall` task already added. This task will 
 execute `npm install` and installs all dependencies in `package.json`. It will only run when changes 
-are made to `package.json` or `node_modules`. Execute it like this:
+are made to `package.json`, `npm-shrinkwrap.json`, `package-lock.json` or `node_modules`. Execute it like this:
 
 ```bash
 $ gradle npmInstall
 ```
 
+Keep in mind that this task is **not** equivalent to `npm_install`.
+The *only* task that will respect settings like `npmInstallCommand` is `npmInstall`.
+
 All npm command can also be invoked using underscore notation based on a gradle rule:
 
 ```bash
-$ gradle npm_install
 $ gradle npm_update
 $ gradle npm_list
 $ gradle npm_cache_clean
@@ -95,7 +97,7 @@ These however are not shown when running gradle tasks, as they generated dynamic
 be used for dependency declarations, such as:
 
 ```gradle
-npm_install.dependsOn(npm_cache_clean)
+npm_audit.dependsOn(npm_cache_clean)
 ```
 
 More arguments can be passed via the `build.gradle` file:
@@ -112,6 +114,45 @@ If you want to extend the tasks more or create custom variants, you can extend t
 task installExpress(type: NpmTask) {
   // install the express package only
   args = ['install', 'express', '--save-dev']
+}
+```
+
+## Executing `npm` Commands via `npx`
+
+[As of 5.2](https://blog.npmjs.org/post/162869356040/introducing-npx-an-npm-package-runner),
+ `npm` is bundled with a new command called [`npx`](https://www.npmjs.com/package/npx) which is aimed at running CLI 
+ commands from NPM packages. 
+
+It enables to execute `npm` commands without needing to declare them as a `script` in the `package.json` file and run 
+thanks to the `npm run` command.
+
+It does not require the command to be locally or globally installed. If the command is not already installed, the 
+corresponding package is installed then the command is run. In this case, it is necessary to indicate the package
+ name instead of the command name.
+ 
+The `NpxTask` is able to execute some `npx` commands. It depends on the `npmSetup` to ensure `npx` is available. 
+
+To generate a new Angular project with the `ng` command coming from `@angular/cli` which is not installed 
+(note that we can specify the version):
+
+```gradle
+task generateAngularApp(type: NpxTask) {
+  command = '@angular/cli@8.3.2'
+  args = ['new', 'myApp']
+}
+```
+
+To build an Angular application with `@angular/cli` locally installed:
+
+```gradle
+task buildAngularApp(type: NpxTask) {
+  dependsOn npmInstall
+  command = 'ng'
+  args = ['build', '--prod']
+  inputs.files('package.json', 'package-lock.json', 'angular.json', 'tsconfig.json', 'tsconfig.app.json')
+  inputs.dir('src')
+  inputs.dir(fileTree("node_modules").exclude(".cache"))
+  outputs.dir('dist')
 }
 ```
 
@@ -175,8 +216,12 @@ node {
 
   // Version of Yarn to use.
   yarnVersion = '0.16.1'
+  
+  // Override the install command used by npmInstall
+  npmInstallCommand = 'install'
 
   // Base URL for fetching node distributions (change if you have a mirror).
+  // Or set to null if you want to add the repository on your own.
   distBaseUrl = 'https://nodejs.org/dist'
 
   // If true, it will download node using above parameters.

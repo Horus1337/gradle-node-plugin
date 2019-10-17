@@ -1,9 +1,10 @@
 package com.moowork.gradle.node.yarn
 
 import com.moowork.gradle.node.NodeExtension
+import com.moowork.gradle.node.NodePlugin
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 
@@ -14,18 +15,19 @@ class YarnInstallTask
 {
     public final static String NAME = 'yarn'
 
+    private Closure nodeModulesOutputFilter
+
     public YarnInstallTask()
     {
-        this.group = 'Node'
+        this.group = NodePlugin.NODE_GROUP
         this.description = 'Install node packages using Yarn.'
         setYarnCommand( '' )
         dependsOn( [YarnSetupTask.NAME] )
+    }
 
-        this.project.afterEvaluate {
-            getInputs().file( new File( (File) this.project.node.nodeModulesDir, 'package.json' ) )
-            getInputs().file( new File( (File) this.project.node.nodeModulesDir, 'yarn.lock' ) )
-            getOutputs().dir( new File( (File) this.project.node.nodeModulesDir, 'node_modules' ) )
-        }
+    void setNodeModulesOutputFilter(Closure nodeModulesOutputFilter)
+    {
+        this.nodeModulesOutputFilter = nodeModulesOutputFilter
     }
 
     @InputFile
@@ -46,9 +48,16 @@ class YarnInstallTask
         return lockFile.exists() ? lockFile : null
     }
 
-    @OutputDirectory
+    @OutputFiles
     protected getNodeModulesDir()
     {
-        return new File(this.project.extensions.getByType(NodeExtension).nodeModulesDir, 'node_modules')
+        def nodeModulesDirectory =
+                new File(this.project.extensions.getByType(NodeExtension).nodeModulesDir, 'node_modules')
+        def nodeModulesFileTree = project.fileTree(nodeModulesDirectory)
+        if (nodeModulesOutputFilter)
+        {
+            nodeModulesOutputFilter(nodeModulesFileTree)
+        }
+        return nodeModulesFileTree
     }
 }

@@ -4,23 +4,28 @@ import org.apache.commons.io.FileUtils
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.BuildTask
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.util.GradleVersion
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
+@RunWithMultipleGradleVersions
 abstract class AbstractIntegTest
     extends Specification
 {
     @Rule
     final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    def File projectDir;
+    File projectDir
 
-    def File buildFile;
+    File buildFile
 
-    def setup()
+    GradleVersion gradleVersion = null
+
+    def setup(GradleVersion gradleVersion)
     {
-        this.projectDir = this.temporaryFolder.root;
+        this.gradleVersion = gradleVersion
+        this.projectDir = this.temporaryFolder.root.toPath().toRealPath().toFile()
         this.buildFile = createFile( 'build.gradle' )
     }
 
@@ -29,7 +34,9 @@ abstract class AbstractIntegTest
         return GradleRunner.create().
             withProjectDir( this.projectDir ).
             withArguments( args ).
-            withPluginClasspath();
+            withPluginClasspath().
+            forwardOutput().
+            withGradleVersion(gradleVersion.version);
     }
 
     protected final BuildResult build( final String... args )
@@ -95,7 +102,7 @@ abstract class AbstractIntegTest
         return file
     }
 
-    protected void copyResources( String srcDir, String destination )
+    protected void copyResources( String srcDir, String destination = "" )
     {
         ClassLoader classLoader = getClass().getClassLoader();
         URL resource = classLoader.getResource( srcDir );

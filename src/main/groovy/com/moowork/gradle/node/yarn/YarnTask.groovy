@@ -1,7 +1,11 @@
 package com.moowork.gradle.node.yarn
 
+import com.moowork.gradle.node.NodePlugin
 import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecResult
 
@@ -18,21 +22,9 @@ class YarnTask
 
     public YarnTask()
     {
+        this.group = NodePlugin.NODE_GROUP
         this.runner = new YarnExecRunner( this.project )
         dependsOn( YarnSetupTask.NAME )
-
-        this.project.afterEvaluate {
-            if ( !this.runner.workingDir )
-            {
-                def workingDir = this.project.node.nodeModulesDir
-                setWorkingDir( workingDir )
-            }
-
-            if ( !this.runner.workingDir.exists() )
-            {
-                this.runner.workingDir.mkdirs();
-            }
-        }
     }
 
     void setArgs( final Iterable<?> value )
@@ -45,10 +37,24 @@ class YarnTask
         this.yarnCommand = cmd
     }
 
-    @Internal
+    @Input
+    @Optional
+    String [] getYarnCommand()
+    {
+        return yarnCommand
+    }
+
+    @Input
+    @Optional
     Iterable<?> getArgs()
     {
         return this.args
+    }
+
+    @Nested
+    YarnExecRunner getExecRunner()
+    {
+        return this.runner
     }
 
     void setEnvironment( final Map<String, ?> value )
@@ -56,9 +62,9 @@ class YarnTask
         this.runner.environment << value
     }
 
-    void setWorkingDir( final Object value )
+    void setWorkingDir( final File workingDir )
     {
-        this.runner.workingDir = value
+        this.runner.workingDir = workingDir
     }
 
     void setIgnoreExitValue( final boolean value )
